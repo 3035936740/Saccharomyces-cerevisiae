@@ -12,11 +12,20 @@ from utli.dir import local_dir
 
 # WHY USING SHIFT-JIS???!!!
 def update_db(game_dir, map_size):
+    mods_path = f"{os.path.dirname(game_dir)}/data_mods/_cache/others/music_db.xml"
+    
     jis_path = game_dir + '/others/music_db.xml'
+    
+    is_mod_path = False
+    
+    if os.path.isfile(mods_path):
+        jis_path = mods_path
+        is_mod_path = True
+    
     utf_path = local_dir + '/data/music_db.xml'
 
     # Set up music_db encoded with UTF-8
-    jis_2_utf(jis_path, utf_path)
+    jis_2_utf(jis_path, utf_path, is_mod_path)
 
     # Get music information from xml, then saved as npy file
     tree = parse(utf_path)
@@ -95,7 +104,7 @@ def update_db(game_dir, map_size):
     search_list = [' ' for _ in range(map_size)]
     search_list[:len(temp_list)] = temp_list
     for index in range(map_size):
-        if search_list[index][0] is ' ':
+        if search_list[index][0] == ' ':
             search_list[index] = ' '.join(_get_raw_search_record(music_map[index]))
 
     # Save search database

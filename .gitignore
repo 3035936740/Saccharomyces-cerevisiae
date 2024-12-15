@@ -1,0 +1,9 @@
+__pycache__
+.venv
+build
+data
+dist
+app.spec
+config.cfg
+timber.log
+img_archive

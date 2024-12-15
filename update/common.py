@@ -1,5 +1,6 @@
 import base64
-
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
 
 def decode_b64(msg: str, dst: str):
     _f = open(dst, 'wb')
@@ -7,10 +8,22 @@ def decode_b64(msg: str, dst: str):
     _f.close()
 
 
-def jis_2_utf(jis: str, utf: str):
-    jis_xml = open(jis, 'r', encoding='cp932')
-    jis_data = jis_xml.readlines()
-    jis_xml.close()
+def jis_2_utf(jis: str, utf: str, is_mod_data: bool = False):
+    jis_data: list[str] = []
+    
+    if is_mod_data:
+        with open(jis, 'r', encoding='cp932') as jis_xml:
+            xml_string = jis_xml.read()
+        # 解析 XML 字符串
+        root = ET.fromstring(xml_string)
+
+        # 使用 minidom 格式化 XML
+        xml_str = ET.tostring(root).decode('cp932')
+        xml_str = minidom.parseString(xml_str).toprettyxml(indent="  ")
+        jis_data = xml_str.splitlines()
+    else:
+        with open(jis, 'r', encoding='cp932') as jis_xml:
+            jis_data = jis_xml.readlines()
 
     utf_xml = open(utf, 'w', encoding='utf-8')
     utf_xml.write('<?xml version="1.0" encoding="utf-8"?>\n')

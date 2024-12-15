@@ -56,8 +56,8 @@ class Config:
         _cfg = open(self.path, 'w', encoding='utf-8')
         _cfg.write(
             '[Search]\n'
-            '# Range of mid, default as 2000\n'
-            'map size = 2000\n'
+            '# Range of mid, default as 4000\n'
+            'map size = 4000\n'
             '\n'
             '# User\'s card number in asphyxia\'s website (or database), a 16 bit long hex number sequence\n'
             'card num = \n'

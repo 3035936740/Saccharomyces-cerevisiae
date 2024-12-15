@@ -34,7 +34,7 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
 
     # Get recent text message
     msg = '|Date                 |Diff  |Score    |Grade |Clear |VF     |Name\n' \
-          '|%-21s|%-6s|%-9s|%-6s|%-6s|%-6.3f |%s' \
+          '|%-21s|%-6s|%-9s|%-6s|%-6s|%-d |%s' \
           % (real_time, (diff + str(lv)), score, grade_table[grade], clear_table[clear], vf, name)
     timber.debug('Generate single data complete.\n%s' % msg)
 
@@ -151,9 +151,9 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
         clear_box_anc.plot()
 
         clear_icon = cv2.imread(img_archive + '/ms_sel/mark_%s.png' % clear_img[clear], cv2.IMREAD_UNCHANGED)
-        clear_factor = 1.09
+        clear_factor = 1.00
         clear_icon = cv2.resize(clear_icon, dsize=None, fx=clear_factor, fy=clear_factor, interpolation=cv2.INTER_AREA)
-        clear_icon_anc = AnchorImage(bg, 'clear icon', clear_icon, free=(-68, 12), father=clear_base_anc)
+        clear_icon_anc = AnchorImage(bg, 'clear icon', clear_icon, free=(-96, -5), father=clear_base_anc)
         clear_icon_anc.plot()
 
         # "Best" light, cuz Asphyxia only records best record
@@ -214,17 +214,21 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
 
         # BPM box
         bpm_box = cv2.imread(img_archive + '/ms_sel/box_bpm.png', cv2.IMREAD_UNCHANGED)
-        bpm_anc = AnchorImage(bg, 'bpm box', bpm_box, (759, 22), father=side_field)
+        bpm_box_factor = 0.98
+        bpm_box = cv2.resize(bpm_box, dsize=None, fx=bpm_box_factor, fy=bpm_box_factor, interpolation=cv2.INTER_AREA)
+        bpm_anc = AnchorImage(bg, 'bpm box', bpm_box, (754, 22), father=side_field)
         bpm_anc.plot()
 
         bpm_font = ImageFont.truetype(font_continuum, 20, encoding='utf-8')
         bpm_str = get_bpm_str(single_data[5], single_data[6])
-        bpm_str_anc = AnchorText(bg, 'bpm', bpm_str, pen, bpm_font, (3, 53), bpm_anc)
+        bpm_str_anc = AnchorText(bg, 'bpm', bpm_str, pen, bpm_font, (0, 52), bpm_anc)
         bpm_str_anc.plot((255, 255, 255))
 
         # Safe icon
         safe = cv2.imread(img_archive + '/ms_sel/icon_safe.png', cv2.IMREAD_UNCHANGED)
-        safe_anc = AnchorImage(bg, 'safe', safe, (766, 237), father=side_field)
+        safe_factor = 1.04
+        safe = cv2.resize(safe, dsize=None, fx=safe_factor, fy=safe_factor, interpolation=cv2.INTER_AREA)
+        safe_anc = AnchorImage(bg, 'safe', safe, (755, 200), father=side_field)
         safe_anc.plot()
 
         # Song name and artist
@@ -365,7 +369,7 @@ def plot_b50(_music_map: list = asp.music_map, profile: list = asp.profile) -> s
             break
         inf_ver = npdb.level_table[mid][9]
         diff = get_diff(m_type, inf_ver)
-        msg.append('\n|#%-4d|%-6.3f  |%s%-2s  |%-9s|%-6s|%-6s|%s' %
+        msg.append('\n|#%-4d|%-d  |%s%-2s  |%-9s|%-6s|%-6s|%s' %
                    ((index + 1), vf, diff, lv, score, clear_table[clear], grade_table[grade], npdb.level_table[mid][1]))
     msg = ''.join(msg)
     timber.debug('Generate B50 data complete.\n%s' % msg)
@@ -455,11 +459,11 @@ def plot_b50(_music_map: list = asp.music_map, profile: list = asp.profile) -> s
 
             # Clear mark & grade mark
             clear_icon = clear_list[clear]
-            clear_anc = AnchorImage(bg, 'clear', clear_icon, free=(61, 147), father=box_anc)
+            clear_anc = AnchorImage(bg, 'clear', clear_icon, free=(50, 137), father=box_anc)
             clear_anc.plot()
 
             grade_icon = grade_list[grade]
-            grade_anc = AnchorImage(bg, 'grade', grade_icon, free=(61, 202), father=box_anc)
+            grade_anc = AnchorImage(bg, 'grade', grade_icon, free=(61, 207), father=box_anc)
             grade_anc.plot()
 
             # Title
@@ -495,9 +499,9 @@ def plot_b50(_music_map: list = asp.music_map, profile: list = asp.profile) -> s
 
             # 'VF' and its value
             res_vf_field = Anchor(bg, 'respective vf field', free=(53, 488), father=box_anc)  # res = respective
-            res_vf_text_anc = AnchorText(bg, 'res vf text', 'VF   #%02d' % (index + 1),
+            res_vf_text_anc = AnchorText(bg, 'res vf text', '#%02d' % (index + 1),
                                          pen, vf_str_font, (0, 1), res_vf_field)
-            res_vf_num_anc = AnchorText(bg, 'res vf num', '%.3f' % vf, pen, vf_num_font, (20, -5), res_vf_field)
+            res_vf_num_anc = AnchorText(bg, 'res vf num', 'VF %d' % vf, pen, vf_num_font, (20, 2), res_vf_field)
 
             res_vf_text_anc.plot(color_black)
             res_vf_num_anc.plot(get_vf_level(vf, is_darker=True, is_color=True))
@@ -551,7 +555,7 @@ def plot_level(level: int, limits: tuple, grade_flag: str = None,
            '|No.  |Score    |Clear |Grade |VF     |Name' % (level, lim_l, lim_h)]
     for index in range(length):
         valid, mid, m_type, score, clear, grade, m_time, exs, lv, vf = lv_map[index][:10]
-        msg.append('\n|%-5d|%-9s|%-6s|%-6s|%-6.3f |%s' %
+        msg.append('\n|%-5d|%-9s|%-6s|%-6s|%-5d |%s' %
                    (index + 1, score, clear_table[clear], grade_table[grade], vf, npdb.level_table[mid][1]))
     msg = ''.join(msg)
     timber.debug('Generate level.%d scores complete.\n%s' % (level, msg))
@@ -659,11 +663,11 @@ def plot_level(level: int, limits: tuple, grade_flag: str = None,
 
             # Clear mark & grade mark
             clear_icon = clear_list[clear]
-            clear_anc = AnchorImage(bg, 'clear', clear_icon, free=(61, 147), father=box_anc)
+            clear_anc = AnchorImage(bg, 'clear', clear_icon, free=(50, 137), father=box_anc)
             clear_anc.plot()
 
             grade_icon = grade_list[grade]
-            grade_anc = AnchorImage(bg, 'grade', grade_icon, free=(61, 202), father=box_anc)
+            grade_anc = AnchorImage(bg, 'grade', grade_icon, free=(61, 207), father=box_anc)
             grade_anc.plot()
 
             # Title
@@ -701,7 +705,7 @@ def plot_level(level: int, limits: tuple, grade_flag: str = None,
             res_vf_field = Anchor(bg, 'respective vf field', free=(53, 488), father=box_anc)  # res = respective
             res_vf_text_anc = AnchorText(bg, 'res vf text', 'SCORE    #%03d' % (index + 1),
                                          pen, vf_str_font, (0, -97), res_vf_field)
-            res_vf_num_anc = AnchorText(bg, 'res vf num', '%.3f' % vf, pen, vf_num_font, (20, -5), res_vf_field)
+            res_vf_num_anc = AnchorText(bg, 'res vf num', 'VF %d' % vf, pen, vf_num_font, (20, 2), res_vf_field)
 
             res_vf_text_anc.plot(color_black)
             res_vf_num_anc.plot(get_vf_level(vf, is_darker=True, is_color=True))

@@ -1,3 +1,4 @@
+import os
 from utli.cfg_read import cfg
 # from hashlib import sha256
 from os import path, listdir
@@ -9,8 +10,17 @@ Initialization
 """
 
 # Reading config
-song_folders = cfg.game_dir + '/music'
+song_folderses = [cfg.game_dir + '/music']
 img_archive = local_dir + '/img_archive/gen6'
+
+mods_path = f"{os.path.dirname(cfg.game_dir)}/data_mods"
+
+if os.path.exists(mods_path) and os.path.isdir(mods_path):
+    for f in os.listdir(mods_path):
+        dirpath = os.path.join(mods_path, f)
+        music_path = os.path.join(dirpath, "music")
+        if os.path.exists(music_path) and os.path.isdir(music_path):
+            song_folderses.append(music_path)
 
 """
 Pre-define
@@ -46,7 +56,8 @@ diff_table[0][3], diff_table[1][3], diff_table[2][3], diff_table[3][3], diff_tab
     'INF', 'GRV', 'HVN', 'VVD', 'XCD'
 diff_text_table = {1: 'nov', 2: 'adv', 3: 'exh', 4: 'inf', 5: 'grv', 6: 'hvn', 7: 'vvd', 8: 'mxm'}
 
-vf_level = (0.0, 10.0, 12.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 24.0)
+vf_level = (0, 200, 240, 280, 300, 320, 340, 360, 380, 400, 460)
+vf_level_old = (0.0, 10.0, 12.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 24.0)
 vf_color = (color_white, (193, 139, 73), (48, 73, 157), (245, 189, 26), (83, 189, 181), (200, 22, 30), (237, 179, 202),
             (234, 234, 233), (248, 227, 165), (198, 59, 55), (108, 76, 148))
 
@@ -64,12 +75,13 @@ Functions
 
 
 def get_vf_level(vf: float, is_color: bool = False, is_darker: bool = False):
-    if vf < 0 or vf > 24:
-        return
+    # if vf < 0 or vf > 24:
+    #     return
     vf_grade = 10
     for index in range(len(vf_level)):
         if vf < vf_level[index]:
             vf_grade = index
+            
             break
     vf_interval = (vf_level[vf_grade] - vf_level[vf_grade - 1]) / 4
     vf_stars = int(np.floor((vf - vf_level[vf_grade - 1]) / vf_interval)) + 1
@@ -80,25 +92,33 @@ def get_vf_level(vf: float, is_color: bool = False, is_darker: bool = False):
             return tuple(np.array(color) * 2 // 3)
         return color
 
+    for index in range(len(vf_level)):
+        if vf < vf_level_old[index]:
+            vf_grade = index
+            
+            break
+    vf_interval = (vf_level_old[vf_grade] - vf_level_old[vf_grade - 1]) / 4
+    vf_stars = int(np.floor((vf - vf_level_old[vf_grade - 1]) / vf_interval)) + 1
     return vf_grade, vf_stars
 
 
 def get_jacket_path(mid: int, m_type: int, size: str = False) -> str:
     mid = str(mid).zfill(4)
-    for song_folder in listdir(song_folders):
-        if song_folder.startswith(mid):
-            song_path = ('%s/%s/' % (song_folders, song_folder))
-            m_index = m_type + 1
-            while m_index:
-                if path.exists('%sjk_%s_%d.png' % (song_path, mid, m_index)):
-                    if size:
-                        return '%sjk_%s_%d_%s.png' % (song_path, mid, m_index, size)
-                    return '%sjk_%s_%d.png' % (song_path, mid, m_index)
-                m_index -= 1
-            if size:
-                return cfg.game_dir + '/data/graphics/jk_dummy_%s.png' % size
-            else:
-                return cfg.game_dir + '/data/graphics/jk_dummy_s.png'
+    for song_folders in song_folderses:
+        for song_folder in listdir(song_folders):
+            if song_folder.startswith(mid):
+                song_path = ('%s/%s/' % (song_folders, song_folder))
+                m_index = m_type + 1
+                while m_index:
+                    if path.exists('%sjk_%s_%d.png' % (song_path, mid, m_index)):
+                        if size:
+                            return '%sjk_%s_%d_%s.png' % (song_path, mid, m_index, size)
+                        return '%sjk_%s_%d.png' % (song_path, mid, m_index)
+                    m_index -= 1
+                if size:
+                    return cfg.game_dir + '/data/graphics/jk_dummy_%s.png' % size
+                else:
+                    return cfg.game_dir + '/data/graphics/jk_dummy_s.png'
 
 
 def get_jacket(mid: int, m_type: int, size: str = False):
@@ -142,10 +162,10 @@ def get_overall_vf(music_b50: list) -> float:
     vol_force = 0.0
     for record in music_b50:
         if record[0]:
-            vol_force += int(record[9] * 10) / 500
+            vol_force += record[9] # int(record[9] * 10) / 500
         else:
             break
-    return vol_force
+    return vol_force / 1000
 
 
 def get_bpm_str(bpm_max: np.str, bpm_min: np.str) -> str:
@@ -357,6 +377,7 @@ def generate_mini_profile(profile: list, vf: float, vf_specific: list = None) ->
     profile_box = cv2.imread(img_archive + '/play_data_small/box_result_mine.png', cv2.IMREAD_UNCHANGED)
     appeal_card = cv2.imread(get_ap_card(ap_card), cv2.IMREAD_UNCHANGED)
     skill_img = load_skill(appeal_card, skill, dis_resize=True)
+    # vf标
     vf_icon = load_vf(vf, is_small=True)
     vf_star = cv2.imread(img_archive + '/force/star_gold_i_eab.png', cv2.IMREAD_UNCHANGED)
     vf_raw = cv2.imread(img_archive + '/force/font_force_s.png', cv2.IMREAD_UNCHANGED)
@@ -406,7 +427,7 @@ def generate_mini_profile(profile: list, vf: float, vf_specific: list = None) ->
         vf_layer = Image.fromarray(vf_layer)
         vf_layer.putalpha(1)
         vf_pen = ImageDraw.Draw(vf_layer)
-        vf_pen.text((397, 148), '%.3f' % vfs, rgb_2_bgr(get_vf_level(vfs, is_color=True)), vfs_font)
+        vf_pen.text((397, 150), 'VF : %d' % vfs, rgb_2_bgr(get_vf_level(vfs, is_color=True)), vfs_font)
         vf_layer = np.array(vf_layer)
         png_superimpose(bg, vf_layer)
 

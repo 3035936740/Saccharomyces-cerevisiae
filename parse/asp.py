@@ -1,4 +1,5 @@
 import json
+import math
 import sys
 
 from utli.logger import timber
@@ -146,6 +147,7 @@ class ASPParser:
             except ValueError:
                 lv = 0
             vf = lv * (score / 10000000) * sheet.clear_factor[clear] * sheet.grade_factor[grade]
+            vf = math.floor(vf * 20)
             self.music_map[index][lv_i], self.music_map[index][vf_i] = lv, vf
 
     @property
