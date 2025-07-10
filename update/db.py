@@ -33,6 +33,74 @@ def update_db(game_dir, map_size):
 
     music_map = [[''] * 26 for _ in range(map_size)]
 
+    for music in root.findall('music'):
+        # 举例获取属性或子标签内容
+        mid = music.get('id')  # 获取属性
+        
+        # info
+        info = music.find('info')
+        name = amend_jis(info.findtext('title_name'))  # 获取子标签内容
+        name_yo = info.findtext('title_yomigana')
+        artist = amend_jis(info.findtext("artist_name"))
+        artist_yo = info.findtext("artist_yomigana")
+        music_ascii = info.findtext("ascii").replace('_', ' ')
+        bpm_max = int(info.findtext("bpm_max"))
+        bpm_min = int(info.findtext("bpm_min"))
+        date = int(info.findtext("distribution_date"))
+        version = int(info.findtext("version"))
+        inf_ver = int(info.findtext("inf_ver"))
+
+        # level
+        difficulty = music.find('difficulty')
+        novice = difficulty.find('novice')
+        nov_lv = int(novice.findtext("difnum"))
+        nov_ill = amend_jis(novice.findtext("illustrator"))
+        nov_eff = amend_jis(novice.findtext("effected_by"))
+        advanced = difficulty.find('advanced')
+        adv_lv = int(advanced.findtext("difnum"))
+        adv_ill = amend_jis(advanced.findtext("illustrator"))
+        adv_eff = amend_jis(advanced.findtext("effected_by"))
+        exhaust = difficulty.find('exhaust')
+        exh_lv = int(exhaust.findtext("difnum"))
+        exh_ill = amend_jis(exhaust.findtext("illustrator"))
+        exh_eff = amend_jis(exhaust.findtext("effected_by"))
+        try:
+            infinite = difficulty.find('infinite')
+            if infinite is None:
+                raise ValueError("infinite not found")
+            inf_lv = int(infinite.findtext("difnum"))
+            inf_ill = amend_jis(infinite.findtext("illustrator"))
+            inf_eff = amend_jis(infinite.findtext("effected_by"))
+        except Exception:
+            inf_lv = 0
+            inf_ill = 'dummy'
+            inf_eff = 'dummy'
+        try:
+            maximum = difficulty.find('maximum')
+            if maximum is None:
+                raise ValueError("maximum not found")
+            mxm_lv = int(maximum.findtext("difnum"))
+            mxm_ill = amend_jis(maximum.findtext("illustrator"))
+            mxm_eff = amend_jis(maximum.findtext("effected_by"))
+        except Exception:
+            mxm_lv = 0
+            mxm_ill = 'dummy'
+            mxm_eff = 'dummy'
+        
+        music_map[int(mid)] = [
+                mid, name, name_yo, artist, artist_yo,
+                bpm_max, bpm_min, date, version, inf_ver,
+                nov_lv, nov_ill, nov_eff,
+                adv_lv, adv_ill, adv_eff,
+                exh_lv, exh_ill, exh_eff,
+                inf_lv, inf_ill, inf_eff,
+                mxm_lv, mxm_ill, mxm_eff,
+                music_ascii
+            ]
+        
+    """
+
+
     for index in range(map_size):
         try:
             # Fill up each line of level_table.npy
@@ -81,6 +149,7 @@ def update_db(game_dir, map_size):
 
         except IndexError:
             break
+    """
 
     # Save level table
     try:

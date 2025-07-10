@@ -4,6 +4,7 @@ from utli.cfg_read import cfg
 from os import path, listdir
 from ..universal import *
 import time
+from sc_config import TO_VIEW_RATE
 
 """
 Initialization
@@ -38,10 +39,10 @@ color_d_blue = (0, 62, 102)
 color_yellow = (239, 176, 74)
 
 # Definitive field for some dictionary(or they work as tuple)
-clear_img = {1: 'crash', 2: 'comp', 3: 'comp_ex', 4: 'uc', 5: 'puc'}
-clear_table = {1: 'FAILED', 2: 'NC', 3: 'HC', 4: 'UC', 5: 'PUC'}
-clear_palette = ('#FFFFFF', '#32936F', '#69A297', '#A5668B', '#E83F6F', '#FFBF00')
-clear_legend = ('N/A', 'CRASH', 'NC', 'HC', 'UC', 'PUC')
+clear_img = {1: 'crash', 2: 'comp', 3: 'comp_ex', 4: 'uc', 5: 'puc', 6: "comp_ultra"}
+clear_table = {1: 'FAILED', 2: 'NC', 3: 'HC', 4: 'UC', 5: 'PUC', 6: "MC"}
+clear_palette = ("#858585", '#32936F', '#69A297', '#A5668B', '#E83F6F', '#FFBF00', "#FFFFFF")
+clear_legend = ('N/A', 'CRASH', 'NC', 'HC', 'UC', 'PUC', "MC")
 
 grade_img = {1: 'd', 2: 'c', 3: 'b', 4: 'a', 5: 'a_plus', 6: 'aa', 7: 'aa_plus', 8: 'aaa', 9: 'aaa_plus', 10: 's'}
 grade_table = {1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'A+', 6: 'AA', 7: 'AA+', 8: 'AAA', 9: 'AAA+', 10: 'S'}
@@ -51,10 +52,10 @@ grade_legend = ('N/A', 'D', 'C', 'B', 'A', 'A+', 'AA', 'AA+', 'AAA', 'AAA+', 'S'
 
 level_palette = ('#F7FFF7', '#073B4C', '#118AB2', '#06D6A0', '#FFD166', '#EF476F')
 
-diff_table = [['NOV', 'ADV', 'EXH', '', 'MXM'] for _ in range(5)]
+diff_table = [['NOV', 'ADV', 'EXH', '', 'MXM', 'ULT'] for _ in range(6)]
 diff_table[0][3], diff_table[1][3], diff_table[2][3], diff_table[3][3], diff_table[4][3] = \
     'INF', 'GRV', 'HVN', 'VVD', 'XCD'
-diff_text_table = {1: 'nov', 2: 'adv', 3: 'exh', 4: 'inf', 5: 'grv', 6: 'hvn', 7: 'vvd', 8: 'mxm'}
+diff_text_table = {1: 'nov', 2: 'adv', 3: 'exh', 4: 'inf', 5: 'grv', 6: 'hvn', 7: 'vvd', 8: 'mxm', 9: 'ult'}
 
 vf_level = (0, 200, 240, 280, 300, 320, 340, 360, 380, 400, 460)
 vf_level_old = (0.0, 10.0, 12.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 24.0)
@@ -189,12 +190,13 @@ def load_clear(refactor: float or int) -> list:
     clear_cr = cv2.imread(img_archive + '/ms_sel/mark_crash.png', cv2.IMREAD_UNCHANGED)
     clear_nc = cv2.imread(img_archive + '/ms_sel/mark_comp.png', cv2.IMREAD_UNCHANGED)
     clear_hc = cv2.imread(img_archive + '/ms_sel/mark_comp_ex.png', cv2.IMREAD_UNCHANGED)
+    clear_mc = cv2.imread(img_archive + '/ms_sel/mark_comp_ultra.png', cv2.IMREAD_UNCHANGED)
     clear_uc = cv2.imread(img_archive + '/ms_sel/mark_uc.png', cv2.IMREAD_UNCHANGED)
     clear_puc = cv2.imread(img_archive + '/ms_sel/mark_puc.png', cv2.IMREAD_UNCHANGED)
 
-    clear_list = [clear_no, clear_cr, clear_nc, clear_hc, clear_uc, clear_puc]
+    clear_list = [clear_no, clear_cr, clear_nc, clear_hc, clear_uc, clear_puc, clear_mc]
     if refactor:
-        for index in range(6):
+        for index in range(7):
             if clear_list[index] is not None:
                 clear_list[index] = \
                     cv2.resize(clear_list[index], dsize=None, fx=refactor, fy=refactor, interpolation=cv2.INTER_AREA)
@@ -415,19 +417,20 @@ def generate_mini_profile(profile: list, vf: float, vf_specific: list = None) ->
         vf_text = load_vf(vfs, is_text=True)
         vf_raw = cv2.imread(img_archive + '/force/font_force_m.png', cv2.IMREAD_UNCHANGED)
 
-        png_superimpose(bg, vf_raw, (102, 380))
-        png_superimpose(bg, vf_text, (112, 380))
+        png_superimpose(bg, vf_raw, (100, 388))
+        png_superimpose(bg, vf_text, (110, 388))
 
-        rank_font = ImageFont.truetype(font_DFHS, 18, encoding='utf-8', index=0)
-        vfs_font = ImageFont.truetype(font_continuum, 26, encoding='utf-8', index=0)
-        pen.text((397, 135), '#', color_l_white, rank_font)
-        pen.text((415, 135), str(rank), color_l_white, rank_font)
+        rank_font = ImageFont.truetype(font_DFHS, 16, encoding='utf-8', index=0)
+        vfs_font = ImageFont.truetype(font_continuum, 22, encoding='utf-8', index=0)
+        pen.text((404, 131), '#', color_l_white, rank_font)
+        pen.text((420, 131), str(rank), color_l_white, rank_font)
 
         vf_layer = np.ones((profile_box.shape[0], profile_box.shape[1], 3), dtype=np.uint8) * 48
         vf_layer = Image.fromarray(vf_layer)
         vf_layer.putalpha(1)
         vf_pen = ImageDraw.Draw(vf_layer)
-        vf_pen.text((397, 150), 'VF : %d' % vfs, rgb_2_bgr(get_vf_level(vfs, is_color=True)), vfs_font)
+        single_vf = int(vfs) / TO_VIEW_RATE
+        vf_pen.text((403, 146), f'{single_vf:.2f}', rgb_2_bgr(get_vf_level(vfs, is_color=True)), vfs_font)
         vf_layer = np.array(vf_layer)
         png_superimpose(bg, vf_layer)
 

@@ -14,9 +14,7 @@ from utli import draft, sheet
 from genre import packet
 from parse import npdb
 from parse.asp import asp
-
-VERSION = [1, 2, 3, "fix"]
-
+from sc_config import VERSION
 
 class SDVX:
 

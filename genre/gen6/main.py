@@ -12,7 +12,7 @@ from .tools import *
 from parse import npdb
 from parse.asp import asp
 from utli.logger import timber
-
+from sc_config import TO_VIEW_RATE
 
 def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list = asp.profile) -> str:
     """
@@ -34,8 +34,8 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
 
     # Get recent text message
     msg = '|Date                 |Diff  |Score    |Grade |Clear |VF     |Name\n' \
-          '|%-21s|%-6s|%-9s|%-6s|%-6s|%-d |%s' \
-          % (real_time, (diff + str(lv)), score, grade_table[grade], clear_table[clear], vf, name)
+          '|%-21s|%-6s|%-9s|%-6s|%-6s|%.2f |%s' \
+          % (real_time, (diff + str(lv)), score, grade_table[grade], clear_table[clear], vf / TO_VIEW_RATE, name)
     timber.debug('Generate single data complete.\n%s' % msg)
 
     try:
@@ -369,8 +369,8 @@ def plot_b50(_music_map: list = asp.music_map, profile: list = asp.profile) -> s
             break
         inf_ver = npdb.level_table[mid][9]
         diff = get_diff(m_type, inf_ver)
-        msg.append('\n|#%-4d|%-d  |%s%-2s  |%-9s|%-6s|%-6s|%s' %
-                   ((index + 1), vf, diff, lv, score, clear_table[clear], grade_table[grade], npdb.level_table[mid][1]))
+        msg.append('\n|#%-4d|%.2f  |%s%-2s  |%-9s|%-6s|%-6s|%s' %
+                   ((index + 1), vf / TO_VIEW_RATE, diff, lv, score, clear_table[clear], grade_table[grade], npdb.level_table[mid][1]))
     msg = ''.join(msg)
     timber.debug('Generate B50 data complete.\n%s' % msg)
 
@@ -500,8 +500,8 @@ def plot_b50(_music_map: list = asp.music_map, profile: list = asp.profile) -> s
             # 'VF' and its value
             res_vf_field = Anchor(bg, 'respective vf field', free=(53, 488), father=box_anc)  # res = respective
             res_vf_text_anc = AnchorText(bg, 'res vf text', '#%02d' % (index + 1),
-                                         pen, vf_str_font, (0, 1), res_vf_field)
-            res_vf_num_anc = AnchorText(bg, 'res vf num', 'VF %d' % vf, pen, vf_num_font, (20, 2), res_vf_field)
+                                         pen, vf_str_font, (0, 40), res_vf_field)
+            res_vf_num_anc = AnchorText(bg, 'res vf num', f'{vf / TO_VIEW_RATE:.2f}' , pen, vf_num_font, (20, 2), res_vf_field)
 
             res_vf_text_anc.plot(color_black)
             res_vf_num_anc.plot(get_vf_level(vf, is_darker=True, is_color=True))
@@ -555,8 +555,8 @@ def plot_level(level: int, limits: tuple, grade_flag: str = None,
            '|No.  |Score    |Clear |Grade |VF     |Name' % (level, lim_l, lim_h)]
     for index in range(length):
         valid, mid, m_type, score, clear, grade, m_time, exs, lv, vf = lv_map[index][:10]
-        msg.append('\n|%-5d|%-9s|%-6s|%-6s|%-5d |%s' %
-                   (index + 1, score, clear_table[clear], grade_table[grade], vf, npdb.level_table[mid][1]))
+        msg.append('\n|%-5d|%-9s|%-6s|%-6s|%.2f |%s' %
+                   (index + 1, score, clear_table[clear], grade_table[grade], vf / TO_VIEW_RATE, npdb.level_table[mid][1]))
     msg = ''.join(msg)
     timber.debug('Generate level.%d scores complete.\n%s' % (level, msg))
 
@@ -705,7 +705,7 @@ def plot_level(level: int, limits: tuple, grade_flag: str = None,
             res_vf_field = Anchor(bg, 'respective vf field', free=(53, 488), father=box_anc)  # res = respective
             res_vf_text_anc = AnchorText(bg, 'res vf text', 'SCORE    #%03d' % (index + 1),
                                          pen, vf_str_font, (0, -97), res_vf_field)
-            res_vf_num_anc = AnchorText(bg, 'res vf num', 'VF %d' % vf, pen, vf_num_font, (20, 2), res_vf_field)
+            res_vf_num_anc = AnchorText(bg, 'res vf num', f'{vf / TO_VIEW_RATE:.2f}', pen, vf_num_font, (20, 2), res_vf_field)
 
             res_vf_text_anc.plot(color_black)
             res_vf_num_anc.plot(get_vf_level(vf, is_darker=True, is_color=True))

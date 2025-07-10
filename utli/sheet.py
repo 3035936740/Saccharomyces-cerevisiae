@@ -1,5 +1,5 @@
 # Dictionary for vf calculation
-clear_factor = {0: 0, 1: 0.5, 2: 1.0, 3: 1.02, 4: 1.05, 5: 1.10}
+clear_factor = {0: 0, 1: 0.5, 2: 1.0, 3: 1.02, 4: 1.05, 5: 1.10, 6: 1.04}
 grade_factor = {0: 0, 1: 0.80, 2: 0.82, 3: 0.85, 4: 0.88, 5: 0.91, 6: 0.94, 7: 0.97, 8: 1.00, 9: 1.02, 10: 1.05}
 
 # Dictionary for score list

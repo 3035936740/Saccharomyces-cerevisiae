@@ -77,7 +77,7 @@ class TitleMsg:
                   "\n"
                   "                    Simple SDVX@Asphyxia Score Checker                    \n"
                   "                              Version %s\n"
-                  "                       Powered by Nyanm & Achernar\n"
+                  "              Powered by Nyanm & Achernar, maintained by Bing\n"
                   "\n" % '.'.join(map(str, ver_list))
         }
         menu = {
