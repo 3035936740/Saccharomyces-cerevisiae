@@ -52,18 +52,39 @@ def update_db(game_dir, map_size):
 
         # level
         difficulty = music.find('difficulty')
-        novice = difficulty.find('novice')
-        nov_lv = int(novice.findtext("difnum"))
-        nov_ill = amend_jis(novice.findtext("illustrator"))
-        nov_eff = amend_jis(novice.findtext("effected_by"))
-        advanced = difficulty.find('advanced')
-        adv_lv = int(advanced.findtext("difnum"))
-        adv_ill = amend_jis(advanced.findtext("illustrator"))
-        adv_eff = amend_jis(advanced.findtext("effected_by"))
-        exhaust = difficulty.find('exhaust')
-        exh_lv = int(exhaust.findtext("difnum"))
-        exh_ill = amend_jis(exhaust.findtext("illustrator"))
-        exh_eff = amend_jis(exhaust.findtext("effected_by"))
+        try:
+            novice = difficulty.find('novice')
+            if novice is None:
+                raise ValueError("novice not found")
+            nov_lv = int(novice.findtext("difnum"))
+            nov_ill = amend_jis(novice.findtext("illustrator"))
+            nov_eff = amend_jis(novice.findtext("effected_by"))
+        except Exception:
+            nov_lv = 0
+            nov_ill = 'dummy'
+            nov_eff = 'dummy'
+        try:
+            advanced = difficulty.find('advanced')
+            if advanced is None:
+                raise ValueError("advanced not found")
+            adv_lv = int(advanced.findtext("difnum"))
+            adv_ill = amend_jis(advanced.findtext("illustrator"))
+            adv_eff = amend_jis(advanced.findtext("effected_by"))
+        except Exception:
+            adv_lv = 0
+            adv_ill = 'dummy'
+            adv_eff = 'dummy'
+        try:
+            exhaust = difficulty.find('exhaust')
+            if exhaust is None:
+                raise ValueError("exhaust not found")
+            exh_lv = int(exhaust.findtext("difnum"))
+            exh_ill = amend_jis(exhaust.findtext("illustrator"))
+            exh_eff = amend_jis(exhaust.findtext("effected_by"))
+        except Exception:
+            exh_lv = 0
+            exh_ill = 'dummy'
+            exh_eff = 'dummy'
         try:
             infinite = difficulty.find('infinite')
             if infinite is None:
