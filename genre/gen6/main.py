@@ -26,6 +26,12 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
     """
     Unfold data and generate text message
     """
+    SIDE_BAR_WIDTH, SIDE_BAR_HEIGHT = 584, 1784
+    BG_SEL_I_FEB_WIDTH, BG_SEL_I_FEB_HEIGHT = 80, 69
+    HEX_BASE_WIDTH, HEX_BASE_HEIGHT = 112, 90
+    HEX_BASE2_WIDTH, HEX_BASE2_HEIGHT = 158, 144
+    TEXT_CLEARRATE_WIDTH, TEXT_CLEARRATE_HEIGHT = 162, 28
+    
     valid, mid, m_type, score, clear, grade, m_time, exs, lv, vf = _music_map[sg_index][:10]
     user_name, ap_card, aka_index, skill, crew_id = profile
     inf_ver, name = npdb.level_table[mid][9], npdb.level_table[mid][1]
@@ -84,12 +90,60 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
         """
         jk = get_jacket(mid, m_type, size='b')
 
-        # Main body of side bar
-        side_bar = cv2.imread(img_archive + '/ms_sel/bg_sel_i_feb.png', cv2.IMREAD_UNCHANGED)
+        is_new_side_bar = False
+        side_bar_path = img_archive + '/ms_sel/bg_sel_i_feb.png'
+        
+        side_bar = None
+
+        if not os.path.exists(side_bar_path):
+            is_new_side_bar = True
+            # 创建纯透明图层
+            side_bar = np.zeros((SIDE_BAR_HEIGHT, SIDE_BAR_WIDTH, 4), dtype=np.uint8)
+            bg_sel_flame = cv2.imread(img_archive + '/ms_sel/bg_sel_flame.png', cv2.IMREAD_UNCHANGED)
+            bg_sel_flame2 = cv2.imread(img_archive + '/ms_sel/bg_sel_flame2.png', cv2.IMREAD_UNCHANGED)
+            # bg_sel_flame = bg_sel_flame[:, :SIDE_BAR_WIDTH]
+            # bg_sel_flame2 = bg_sel_flame2[:, :SIDE_BAR_WIDTH]
+            
+            png_superimpose(side_bar, bg_sel_flame, (6, 0))
+            png_superimpose(side_bar, bg_sel_flame2, (617, 0))
+        else:
+            # Main body of side bar
+            side_bar = cv2.imread(side_bar_path, cv2.IMREAD_UNCHANGED)
         side_bar_y, side_bar_x, chn = side_bar.shape
         side_field = Anchor(bg, 'side field', (y_px - side_bar_y, 0), father=bg_anc)
         side_anc = AnchorImage(bg, 'side bar', side_bar, (0, 0), father=side_field)
 
+        safe_anc_pos = (755, 200)
+        safe_factor = 1.04
+        best_anc_pos = (608, 15)
+        exscore_anc_pos = (680, 21)
+        score_anc_pos = (629, 38)
+        score_anc_offset = (13, 169)
+        rate_num_anc_pos=(5, 140)
+        bpm_str_anc_pos = (0, 52)
+        bpm_font_size = 20
+        name_anc_pos = (804, 34)
+        artist_anc_pos = (845, 34)
+        clear_icon_anc_pos = (-96, -5)
+        clear_factor = 1.00
+        grade_factor = 0.43
+        grade_anc_pos = (11, 13)
+        if is_new_side_bar:
+            safe_anc_pos = (640, 10)
+            safe_factor = 0.90
+            best_anc_pos = (662, 2)
+            exscore_anc_pos = (731, 21)
+            score_anc_pos = (680, 15)
+            rate_num_anc_pos=(620, 135)
+            bpm_font_size = 30
+            bpm_str_anc_pos = (50, 35)
+            name_anc_pos = (775, 144)
+            artist_anc_pos = (810, 144)
+            clear_icon_anc_pos = (38, -75)
+            clear_factor = 0.6
+            grade_anc_pos = (70, 65)
+            grade_factor = 0.6
+        
         # Background jacket
         jk_factor = 1.43
         jk_bg = cv2.resize(jk, dsize=None, fx=jk_factor, fy=jk_factor, interpolation=cv2.INTER_AREA)
@@ -129,43 +183,66 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
             vf_icon_anc.plot()
 
         # Grade hex box and icon
-        grade_box = cv2.imread(img_archive + '/ms_sel/box_medal.png', cv2.IMREAD_UNCHANGED)
+        grade_box_path = img_archive + '/ms_sel/box_medal.png'
+        
+        grade_box = None
+        
+        if os.path.exists(grade_box_path):
+            grade_box = cv2.imread(grade_box_path, cv2.IMREAD_UNCHANGED)
+        else:
+            grade_box = np.zeros((BG_SEL_I_FEB_HEIGHT, BG_SEL_I_FEB_WIDTH, 4), dtype=np.uint8)
+            
         grade_box_anc = AnchorImage(bg, 'grade box', grade_box, (617, 345), father=side_field)
         grade_box_anc.plot()
 
         grade_icon = cv2.imread(img_archive + '/ms_sel/grade_%s.png' % grade_img[grade], cv2.IMREAD_UNCHANGED)
-        grade_factor = 0.43
         grade_icon = cv2.resize(grade_icon, dsize=None, fx=grade_factor, fy=grade_factor, interpolation=cv2.INTER_AREA)
-        grade_anc = AnchorImage(bg, 'grade', grade_icon, free=(11, 13), father=grade_box_anc)
+        grade_anc = AnchorImage(bg, 'grade', grade_icon, free=grade_anc_pos, father=grade_box_anc)
         grade_anc.plot()
 
+        hex_base_path = img_archive + '/ms_sel/hex_base.png'
+        clear_base = None
+        if os.path.exists(hex_base_path):
+            clear_base = cv2.imread(hex_base_path, cv2.IMREAD_UNCHANGED)
+        else:
+            clear_base = np.zeros((HEX_BASE_HEIGHT, HEX_BASE_WIDTH, 4), dtype=np.uint8)
         # Clear base, hex box and icon
-        clear_base = cv2.imread(img_archive + '/ms_sel/hex_base.png', cv2.IMREAD_UNCHANGED)
         clear_base_anc = AnchorImage(bg, 'clear base', clear_base, (648, 413), father=side_field)
         clear_base_anc.plot()
 
-        clear_box = cv2.imread(img_archive + '/ms_sel/hex_base2.png', cv2.IMREAD_UNCHANGED)
+        hex_base2_path = img_archive + '/ms_sel/hex_base2.png'
+        clear_box = None
+        if os.path.exists(hex_base2_path):
+            clear_box = cv2.imread(hex_base2_path, cv2.IMREAD_UNCHANGED)
+        else:
+            clear_box = np.zeros((HEX_BASE2_HEIGHT, HEX_BASE2_WIDTH, 4), dtype=np.uint8)
+            
         box_factor = 1.07
         clear_box = cv2.resize(clear_box, dsize=None, fx=box_factor, fy=box_factor, interpolation=cv2.INTER_AREA)
         clear_box_anc = AnchorImage(bg, 'clear box', clear_box, free=(-107, -28), father=clear_base_anc)
         clear_box_anc.plot()
 
         clear_icon = cv2.imread(img_archive + '/ms_sel/mark_%s.png' % clear_img[clear], cv2.IMREAD_UNCHANGED)
-        clear_factor = 1.00
         clear_icon = cv2.resize(clear_icon, dsize=None, fx=clear_factor, fy=clear_factor, interpolation=cv2.INTER_AREA)
-        clear_icon_anc = AnchorImage(bg, 'clear icon', clear_icon, free=(-96, -5), father=clear_base_anc)
+        clear_icon_anc = AnchorImage(bg, 'clear icon', clear_icon, free=clear_icon_anc_pos, father=clear_base_anc)
         clear_icon_anc.plot()
 
         # "Best" light, cuz Asphyxia only records best record
-        best = cv2.imread(img_archive + '/ms_sel/text_bestscore2.png', cv2.IMREAD_UNCHANGED)
-        best_anc = AnchorImage(bg, 'best light', best, (608, 15), father=side_field)
+        best_score_path = img_archive + '/ms_sel/text_bestscore2.png'
+        best = None
+        if os.path.exists(best_score_path):
+            best = cv2.imread(best_score_path, cv2.IMREAD_UNCHANGED)
+        else:
+            best = cv2.imread(img_archive + '/ms_sel/text_best_score_sel.png', cv2.IMREAD_UNCHANGED)
+            
+        best_anc = AnchorImage(bg, 'best light', best, best_anc_pos, father=side_field)
         best_anc.plot()
 
         # Score, both bigger four and smaller four
         score = str(score).zfill(8)
         is_trans, opacity = 1, 0.5
 
-        bigger_anc = Anchor(bg, 'big four', free=(629, 38), father=side_field)
+        bigger_anc = Anchor(bg, 'big four', free=score_anc_pos, father=side_field)
         bigger_anc.creat_grid((0, 3), (0, 42))
         b_factor = 0.69
         for index in range(4):  # Bigger four
@@ -179,7 +256,7 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
             cur_anc.plot(opacity=(1 - is_trans * opacity))
 
         s_factor = 0.46
-        smaller_anc = Anchor(bg, 'small four', free=(642, 207), father=side_field)
+        smaller_anc = Anchor(bg, 'small four', free=tuple(np.array(score_anc_pos) + np.array(score_anc_offset)), father=side_field)
         smaller_anc.creat_grid((0, 3), (0, 30))
         for index in range(4, 8):  # Smaller four
             num = score[index]
@@ -194,49 +271,75 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
         # EX score
         ex_rate_font = ImageFont.truetype(font_continuum, 15, encoding='utf-8')
         if exs:
+            ex_box_path = img_archive + '/ms_sel/ex_score.png'
+            ex_box = None
+            if os.path.exists(ex_box_path):
+                ex_box = cv2.imread(ex_box_path, cv2.IMREAD_UNCHANGED)
+            else:
+                ex_box = cv2.imread(img_archive + '/ms_sel/box_score_ex_ms.png', cv2.IMREAD_UNCHANGED)
+                
             # Ex score box
-            ex_box = cv2.imread(img_archive + '/ms_sel/ex_score.png', cv2.IMREAD_UNCHANGED)
-            ex_anc = AnchorImage(bg, 'ex box', ex_box, (680, 21), father=side_field)
+            
+            ex_anc = AnchorImage(bg, 'ex box', ex_box, exscore_anc_pos, father=side_field)
             ex_anc.plot()
 
             # The exscore itself
             exscore_anc = AnchorText(bg, 'exscore', str(exs), pen, ex_rate_font, (5, 151), ex_anc)
             exscore_anc.plot((120, 79, 26), pos='r')
 
+
+        rate_box_path = img_archive + '/ms_sel/text_clearrate.png'
+        rate_box = None
+        if os.path.exists(rate_box_path):
+            rate_box = cv2.imread(rate_box_path, cv2.IMREAD_UNCHANGED)
+        else:
+            rate_box = np.zeros((TEXT_CLEARRATE_HEIGHT, TEXT_CLEARRATE_WIDTH, 4), dtype=np.uint8)
+        
         # Clear rate and number
-        rate_box = cv2.imread(img_archive + '/ms_sel/text_clearrate.png', cv2.IMREAD_UNCHANGED)
         rate_anc = AnchorImage(bg, 'rate box', rate_box, (680, 181), father=side_field)
         rate_anc.plot()
 
         rate_num = '99.61'
-        rate_num_anc = AnchorText(bg, 'rate', rate_num, pen, ex_rate_font, (5, 140), rate_anc)
+        
+        if is_new_side_bar:
+            rate_num_anc = AnchorText(bg, 'rate', rate_num, pen, ex_rate_font, rate_num_anc_pos, side_anc)
+        else:
+            rate_num_anc = AnchorText(bg, 'rate', rate_num, pen, ex_rate_font, rate_num_anc_pos, rate_anc)
         rate_num_anc.plot((255, 255, 255), pos='r')
 
+        bpm_box_path = img_archive + '/ms_sel/box_bpm.png'
+        bpm_box = None
+        if os.path.exists(bpm_box_path):
+            bpm_box = cv2.imread(bpm_box_path, cv2.IMREAD_UNCHANGED)
+        else:
+            bpm_box = cv2.imread(img_archive + '/ms_sel/bg_bpm_info_sel.png', cv2.IMREAD_UNCHANGED)
         # BPM box
-        bpm_box = cv2.imread(img_archive + '/ms_sel/box_bpm.png', cv2.IMREAD_UNCHANGED)
-        bpm_box_factor = 0.98
-        bpm_box = cv2.resize(bpm_box, dsize=None, fx=bpm_box_factor, fy=bpm_box_factor, interpolation=cv2.INTER_AREA)
-        bpm_anc = AnchorImage(bg, 'bpm box', bpm_box, (754, 22), father=side_field)
-        bpm_anc.plot()
+        if is_new_side_bar:
+            bpm_anc = AnchorImage(bg, 'bpm box', bpm_box, (760, 6), father=side_field)
+            bpm_anc.plot()
+        else:
+            bpm_box_factor = 0.98
+            bpm_box = cv2.resize(bpm_box, dsize=None, fx=bpm_box_factor, fy=bpm_box_factor, interpolation=cv2.INTER_AREA)
+            bpm_anc = AnchorImage(bg, 'bpm box', bpm_box, (754, 22), father=side_field)
+            bpm_anc.plot()
 
-        bpm_font = ImageFont.truetype(font_continuum, 20, encoding='utf-8')
+        bpm_font = ImageFont.truetype(font_continuum, bpm_font_size, encoding='utf-8')
         bpm_str = get_bpm_str(single_data[5], single_data[6])
-        bpm_str_anc = AnchorText(bg, 'bpm', bpm_str, pen, bpm_font, (0, 52), bpm_anc)
+        bpm_str_anc = AnchorText(bg, 'bpm', bpm_str, pen, bpm_font, bpm_str_anc_pos, bpm_anc)
         bpm_str_anc.plot((255, 255, 255))
 
         # Safe icon
         safe = cv2.imread(img_archive + '/ms_sel/icon_safe.png', cv2.IMREAD_UNCHANGED)
-        safe_factor = 1.04
         safe = cv2.resize(safe, dsize=None, fx=safe_factor, fy=safe_factor, interpolation=cv2.INTER_AREA)
-        safe_anc = AnchorImage(bg, 'safe', safe, (755, 200), father=side_field)
+        safe_anc = AnchorImage(bg, 'safe', safe, safe_anc_pos, father=side_field)
         safe_anc.plot()
 
         # Song name and artist
         name_font = ImageFont.truetype(font_DFHS, 22, encoding='utf-8')
         song_name = length_uni(name_font, single_data[1], 500)
         artist = length_uni(name_font, single_data[3], 500)
-        name_anc = AnchorText(bg, 'name', song_name, pen, name_font, (804, 34), side_field)
-        artist_anc = AnchorText(bg, 'artist', artist, pen, name_font, (845, 34), side_field)
+        name_anc = AnchorText(bg, 'name', song_name, pen, name_font, name_anc_pos, side_field)
+        artist_anc = AnchorText(bg, 'artist', artist, pen, name_font, artist_anc_pos, side_field)
 
         name_anc.plot((255, 255, 255))
         artist_anc.plot((255, 255, 255))
@@ -284,24 +387,39 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
             right_anc.plot()
             lv_text_anc.plot()
 
+        eff_text = single_data[12 + m_type * 3]
+
         # Effector box and Illustrator box
         eff_ill_font = ImageFont.truetype(font_DFHS, 16, encoding='utf-8')
 
-        eff_box = cv2.imread(img_archive + '/ms_sel/box_effected.png', cv2.IMREAD_UNCHANGED)
-        eff_anc = AnchorImage(bg, 'eff box', eff_box, free=(1019, 90), father=side_field)
-        eff = length_uni(eff_ill_font, single_data[12 + m_type * 3], 250)
-        eff_text_anc = AnchorText(bg, 'eff text', eff, pen, eff_ill_font, free=(7, 162), father=eff_anc)
+        eff_box_path = img_archive + '/ms_sel/box_effected.png'
+        if os.path.exists(eff_box_path):
+            eff_box = cv2.imread(eff_box_path, cv2.IMREAD_UNCHANGED)
+            eff_anc = AnchorImage(bg, 'eff box', eff_box, free=(1019, 90), father=side_field)
+            eff = length_uni(eff_ill_font, eff_text, 250)
+            eff_text_anc = AnchorText(bg, 'eff text', eff, pen, eff_ill_font, free=(7, 162), father=eff_anc)
+            eff_anc.plot()
+            eff_text_anc.plot((255, 255, 255))
+        else:
+            eff_name = length_uni(eff_ill_font, eff_text, 250)
+            eff_anc = AnchorText(bg, 'eff text', eff_name, pen, eff_ill_font, free=(844, 278), father=side_field)
+            eff_anc.plot((255, 255, 255))
 
-        eff_anc.plot()
-        eff_text_anc.plot((255, 255, 255))
+        ill_text = single_data[11 + m_type * 3]
+        
+        ill_box_path = img_archive + '/ms_sel/box_illustrated.png'
+        if os.path.exists(ill_box_path):
+            ill_box = cv2.imread(ill_box_path, cv2.IMREAD_UNCHANGED)
+            ill_anc = AnchorImage(bg, 'ill box', ill_box, free=(1052, 90), father=side_field)
+            ill = length_uni(eff_ill_font, ill_text, 250)
+            ill_text_anc = AnchorText(bg, 'ill text', ill, pen, eff_ill_font, free=(7, 162), father=ill_anc)
 
-        ill_box = cv2.imread(img_archive + '/ms_sel/box_illustrated.png', cv2.IMREAD_UNCHANGED)
-        ill_anc = AnchorImage(bg, 'ill box', ill_box, free=(1052, 90), father=side_field)
-        ill = length_uni(eff_ill_font, single_data[11 + m_type * 3], 250)
-        ill_text_anc = AnchorText(bg, 'ill text', ill, pen, eff_ill_font, free=(7, 162), father=ill_anc)
-
-        ill_anc.plot()
-        ill_text_anc.plot((255, 255, 255))
+            ill_anc.plot()
+            ill_text_anc.plot((255, 255, 255))
+        else:
+            ill_name = length_uni(eff_ill_font, ill_text, 250)
+            ill_anc = AnchorText(bg, 'ill text', ill_name, pen, eff_ill_font, free=(870, 302), father=side_field)
+            ill_anc.plot((255, 255, 255))
 
         """
         Set up user profile
@@ -815,6 +933,7 @@ def plot_summary(base_lv: int, _music_map: list = asp.music_map, profile: list =
         """
         Generate background, text layer and load image ingredients
         """
+        # raise RuntimeError("问题太多,不想处理了就这样吧((")
         # Stipulate the size of the background & generate
         px_prologue, px_chapters, px_epilogue = 450, 1625, 1950
         y_px, x_px = px_prologue + px_chapters * (21 - base_lv) + px_epilogue, 1080

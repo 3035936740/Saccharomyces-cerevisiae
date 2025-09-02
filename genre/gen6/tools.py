@@ -74,6 +74,50 @@ staff_hash = 'b3e46c3a84f6e042ef5f3d934b746ded23a3961d0774293ec2fbe3b42e0ada47'
 Functions
 """
 
+def resize_image_with_aspect_ratio(image_path, target_height, output_path=None):
+    """
+    按比例缩放图片到指定高度，保持宽高比
+    
+    Args:
+        image_path: 输入图片路径
+        target_height: 目标高度
+        output_path: 输出图片路径（可选）
+    
+    Returns:
+        resized_image: 缩放后的图片
+    """
+    # 读取图片
+    image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+    if image is None:
+        raise ValueError(f"无法读取图片: {image_path}")
+    
+    # 获取原始尺寸
+    original_height, original_width = image.shape[:2]
+    
+    # 计算缩放比例
+    scale_ratio = target_height / original_height
+    
+    # 计算新的宽度（保持宽高比）
+    new_width = int(original_width * scale_ratio)
+    
+    # 使用不同的插值方法
+    if scale_ratio > 1:  # 放大图片
+        interpolation = cv2.INTER_LINEAR  # 或 cv2.INTER_CUBIC 质量更好但更慢
+    else:  # 缩小图片
+        interpolation = cv2.INTER_AREA  # 适合缩小
+    
+    # 缩放图片
+    resized_image = cv2.resize(image, (new_width, target_height), interpolation=interpolation)
+    
+    # 保存图片（如果提供了输出路径）
+    if output_path:
+        cv2.imwrite(output_path, resized_image)
+        print(f"图片已保存到: {output_path}")
+        print(f"原始尺寸: {original_width} x {original_height}")
+        print(f"新尺寸: {new_width} x {target_height}")
+        print(f"缩放比例: {scale_ratio:.4f}")
+    
+    return resized_image
 
 def get_vf_level(vf: float, is_color: bool = False, is_darker: bool = False):
     # if vf < 0 or vf > 24:
@@ -299,13 +343,26 @@ def generate_hex_bg(size: tuple, par_a: float = -0.55, par_c: float = 1.1) -> np
 
 
 def generate_std_profile(profile: list, vf: float) -> np.array:
+    NEW_TARGET_WEIGHT, NEW_TARGET_HEIGHT = 896, 284
     user_name, ap_card, aka_name, skill, crew_id = profile
 
-    profile_box = cv2.imread(img_archive + '/play_data/box_playdata.png', cv2.IMREAD_UNCHANGED)
+    is_new_profile = False 
+
+    profile_box_path = img_archive + '/play_data/box_playdata.png'
+    
+    if not os.path.exists(profile_box_path):
+        profile_box_path = img_archive + '/play_data_small/box_result_mine.png'
+        is_new_profile = True
+
+    profile_box = cv2.imread(profile_box_path, cv2.IMREAD_UNCHANGED)
+    if is_new_profile:
+        profile_box = resize_image_with_aspect_ratio(profile_box_path, NEW_TARGET_HEIGHT)
+        
     data_box = cv2.imread(img_archive + '/play_data/box_playdata2.png', cv2.IMREAD_UNCHANGED)
     bl_line = cv2.imread(img_archive + '/play_data/blpass_bg.png', cv2.IMREAD_UNCHANGED)
     bl_pass = cv2.imread(img_archive + '/play_data/blpass_on.png', cv2.IMREAD_UNCHANGED)
     crew = cv2.imread(img_archive + '/psd_crew/psd_crew_%s.png' % crew_id, cv2.IMREAD_UNCHANGED)
+
     appeal_card = cv2.imread(get_ap_card(ap_card), cv2.IMREAD_UNCHANGED)
     skill_img = load_skill(appeal_card, skill, dis_resize=True)
     vf_icon = load_vf(vf, is_small=True)
@@ -319,32 +376,56 @@ def generate_std_profile(profile: list, vf: float) -> np.array:
     vf_star = cv2.resize(vf_star, dsize=None, fx=0.17, fy=0.17, interpolation=cv2.INTER_AREA)
 
     profile_y, profile_x, chn = profile_box.shape
+    if is_new_profile:
+        profile_x = NEW_TARGET_WEIGHT
     crew_y, crew_x, chn = crew.shape
     bg = np.zeros((crew_y + 10, profile_x, 4), dtype=np.uint8)
+    
     box_margin = crew_y - profile_y + 10
-
+    
+    data_box_offset = (47, 207)
+    appeal_card_offset = (60, 52)
+    skill_img_offset = (189, 225)
+    vf_icon_offset = (174, 385)
+    vf_raw_offset = (182, 421)
+    vf_text_offset = (192, 421)
+    crew_offset = (2, profile_x - crew_x - 9)
+    if is_new_profile:
+        data_box_offset = (28, 170)
+        appeal_card_offset = (40, 20)
+        skill_img_offset = (144, 185)
+        vf_icon_offset = (122, 325) # 0, 0
+        vf_raw_offset = (vf_icon_offset[0] + 8, vf_icon_offset[1] + 36) # +8, +36
+        vf_text_offset = (vf_icon_offset[0] + 18, vf_icon_offset[1] + 36) # +18, +36
+        crew_offset = (25, profile_x - crew_x - 0)
+        
     png_superimpose(bg, profile_box, (box_margin, 0))
     png_superimpose(bg, bl_line, (box_margin + 73, 479))
-    png_superimpose(bg, crew, (2, profile_x - crew_x - 9))
+    png_superimpose(bg, crew, crew_offset)
     png_superimpose(bg, bl_pass, (box_margin + 152, 554))
-    png_superimpose(bg, data_box, (box_margin + 47, 207))
-    png_superimpose(bg, appeal_card, (box_margin + 60, 52))
+    if not is_new_profile:
+        png_superimpose(bg, data_box, (box_margin + data_box_offset[0], data_box_offset[1]))
+    png_superimpose(bg, appeal_card, (box_margin + appeal_card_offset[0], appeal_card_offset[1]))
     """
     # It's just so ugly that I have no choice but withdraw this tiny privilege of developer :(
     if sha256(game_dir.encode('utf-8')).hexdigest() == staff_hash:
         staff = cv2.imread(img_archive + '/ap_floor/sdvx_staff_s.png', cv2.IMREAD_UNCHANGED)
         png_superimpose(bg, staff, (box_margin + 60, 43))
     """
-    png_superimpose(bg, skill_img, (box_margin + 189, 225))
-    png_superimpose(bg, vf_icon, (box_margin + 174, 385))
-    png_superimpose(bg, vf_raw, (box_margin + 182, 421))
-    png_superimpose(bg, vf_text, (box_margin + 192, 421))
+    png_superimpose(bg, skill_img, (box_margin + skill_img_offset[0], skill_img_offset[1]))
+    png_superimpose(bg, vf_icon, (box_margin + vf_icon_offset[0], vf_icon_offset[1]))
+    png_superimpose(bg, vf_raw, (box_margin + vf_raw_offset[0], vf_raw_offset[1]))
+    png_superimpose(bg, vf_text, (box_margin + vf_text_offset[0], vf_text_offset[1]))
 
     star_y, star_x, chn = vf_star.shape
     star_interval = 1
     star_num = get_vf_level(vf)[1]
     star_margin = (2 * star_interval + star_x) * (4 - star_num) // 2
-    star_grid = Anchor(bg, 'star grid', (box_margin + 219, 389 + star_margin))
+    
+    star_grid_pos = (219, 389)
+    if is_new_profile:
+        star_grid_pos = (167, 329)
+    star_grid = Anchor(bg, 'star grid', (box_margin + star_grid_pos[0], star_grid_pos[1] + star_margin))
     star_grid.creat_grid((0, star_num), (0, star_x + 2 * star_interval))
     star_anc = AnchorImage(bg, 'star', vf_star, (0, 0), star_grid)
 
@@ -361,10 +442,19 @@ def generate_std_profile(profile: list, vf: float) -> np.array:
     name_font = ImageFont.truetype(font_continuum, 34, encoding='utf-8', index=0)
     vf_font = ImageFont.truetype(font_continuum, 21, encoding='utf-8', index=0)
     time_font = ImageFont.truetype(font_DFHS, 14, encoding='utf-8', index=0)
-    pen.text((218, 146), aka_name, color_white, aka_font)
-    pen.text((218, 174), user_name, color_white, name_font)
-    pen.text((218, 227), 'Asphyxia CORE', color_white, aka_font)
-    pen.text((436, 295), '%.3f' % vf, color_white, vf_font)
+    aka_name_pos = (218, 146)
+    user_name_pos = (218, 174)
+    asphyxia_pos = (218, 227)
+    vf_pos = (436, 295)
+    if is_new_profile:
+        aka_name_pos = (185, 126)
+        user_name_pos = (185, 148)
+        asphyxia_pos = (50, 341)
+        vf_pos = (375, 246)
+    pen.text(aka_name_pos, aka_name, color_white, aka_font)
+    pen.text(user_name_pos, user_name, color_white, name_font)
+    pen.text(asphyxia_pos, 'Asphyxia CORE', color_white, aka_font)
+    pen.text(vf_pos, '%.3f' % vf, color_white, vf_font)
     pen.text((602, 291), time.strftime('%a %Y/%m/%d %H: %M', time.localtime()), color_white, time_font)
 
     text_layer = np.array(text_layer)
@@ -441,7 +531,7 @@ def generate_mini_profile(profile: list, vf: float, vf_specific: list = None) ->
 
     pen.text((316, 132), '%.3f' % vf, color_l_white, vf_font)
     pen.text((153, 33), aka_name, color_l_white, aka_font)
-    pen.text((153, 57), user_name, color_l_white, name_font)
+    pen.text((153, 54), user_name, color_l_white, name_font)
     if vf_specific:
         time_str = vf_specific[2]
         pen.text((46, 214), 'Played at %s' % time_str, color_white, ser_font)

@@ -1,5 +1,5 @@
 # This is the version of the program.
-VERSION = [1, 2, "5a"]
+VERSION = [1, 2, "5b"]
 
 # Turn off test mode when packing the program
 TEST_MODE = 0
