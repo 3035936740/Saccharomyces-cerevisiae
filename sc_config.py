@@ -2,7 +2,7 @@
 VERSION = [1, 2, "5b"]
 
 # Turn off test mode when packing the program
-TEST_MODE = 0
+TEST_MODE = 1
 
 # The very initial message
 INIT_MESSAGE = 'More information at https://github.com/Nyanm/Saccharomyces-cerevisiae'

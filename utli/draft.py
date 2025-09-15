@@ -144,7 +144,7 @@ class FourGetSpecific:
     @_languageHandler
     def init_hint() -> tuple:
         diff = {
-            'EN': '\nNOV->1   ADV->2   EXH->3   INF/GRV/HVN/VVD/MXM->4\n'
+            'EN': '\nNOV->1   ADV->2   EXH->3   INF/GRV/HVN/VVD/MXM->4   ULT->5\n'
         }
         msg = {
             'EN': 'Enter operators like "[mid] [diff(optional)], Search highest difficulty as default, \n'

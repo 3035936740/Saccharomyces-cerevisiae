@@ -350,12 +350,28 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
         cursor = cv2.imread(img_archive + '/ms_sel/cursor_level.png', cv2.IMREAD_UNCHANGED)
         cursor_factor = 0.82
         cursor = cv2.resize(cursor, dsize=None, fx=cursor_factor, fy=cursor_factor, interpolation=cv2.INTER_AREA)
-        lv_list = [single_data[10], single_data[13], single_data[16], str(int(single_data[19]) + int(single_data[22]))]
+        lv_list = [single_data[10], single_data[13], single_data[16], str(int(single_data[19]) + int(single_data[22])), single_data[25]]
 
-        if m_type == 4:  # if it is a mxm chart
+        lv_list = lv_list[-4:] if m_type == 5 else lv_list
+
+        diff_text_tables = [diff_text_table[1], diff_text_table[2], diff_text_table[3]]
+        
+        if int(single_data[9]):
+            diff_text_tables.append(diff_text_table[2 + int(inf_ver)])
+        elif int(single_data[22]):
+            diff_text_tables.append(diff_text_table[8])
+        
+        if int(single_data[25]):
+            diff_text_tables.append(diff_text_table[9])
+        
+        diff_text_tables = diff_text_tables[-4:] if m_type == 5 else diff_text_tables
+
+        if m_type == 4 or m_type == 5:  # if it is a mxm/ult chart
             cursor_index = 3
         else:
             cursor_index = m_type
+
+        len_diff_text_table = len(diff_text_tables)
 
         for index in range(4):
             cur_lv = lv_list[index].zfill(2)
@@ -374,12 +390,9 @@ def plot_single(sg_index: int, _music_map: list = asp.music_map, profile: list =
             left_anc = AnchorImage(bg, 'lv left', lv_left, free=(0, 0), father=lv_field)
             right_anc = AnchorImage(bg, 'lv right', lv_right, free=(0, 29), father=lv_field)
 
-            if index <= 2:  # NOV, ADV, EXH
-                lv_text = diff_text_table[index + 1]
-            elif int(single_data[9]):  # INF, GRV, HVN, VVD
-                lv_text = diff_text_table[index + int(inf_ver) - 1]
-            else:  # MXM
-                lv_text = diff_text_table[8]
+            
+            if index < len_diff_text_table:  # Diff
+                lv_text = diff_text_tables[index]
             lv_text = cv2.imread(img_archive + '/psd_level/level_sel_%s.png' % lv_text, cv2.IMREAD_UNCHANGED)
             lv_text_anc = AnchorImage(bg, 'level text', lv_text, free=(56, -11), father=lv_field)
 
@@ -567,6 +580,8 @@ def plot_b50(_music_map: list = asp.music_map, profile: list = asp.profile) -> s
             # Level box
             if m_type == 3:
                 level_box = level_list[m_type + int(inf_ver)]
+            elif m_type == 5:
+                level_box = level_list[-1]
             else:
                 level_box = level_list[m_type]
             level_box_anc = AnchorImage(bg, 'level box', level_box, free=(14, 144), father=box_anc)
@@ -771,6 +786,8 @@ def plot_level(level: int, limits: tuple, grade_flag: str = None,
             # Level box
             if m_type == 3:
                 level_box = level_list[m_type + int(inf_ver)]
+            elif m_type == 5:
+                level_box = level_list[-1]
             else:
                 level_box = level_list[m_type]
             level_box_anc = AnchorImage(bg, 'level box', level_box, free=(14, 144), father=box_anc)
@@ -849,7 +866,7 @@ def plot_level(level: int, limits: tuple, grade_flag: str = None,
                        % format_exc())
         return msg
 
-
+# BUG太多了我也不知道怎么修复,就输出文字算了(
 def plot_summary(base_lv: int, _music_map: list = asp.music_map, profile: list = asp.profile):
     """
     Plot function to analyze user's record.
@@ -867,33 +884,34 @@ def plot_summary(base_lv: int, _music_map: list = asp.music_map, profile: list =
     music_map_sort.sort(key=lambda x: x[9], reverse=True)  # make a sorted map duplicate
     vol_force = get_overall_vf(music_map_sort[0:50])  # Get overall volforce
 
-    level_summary = np.zeros((21, 18), dtype=int)  # Get default level summary
-    clear_index = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
-    grade_index = {0: 6, 1: 7, 2: 8, 3: 9, 4: 10, 5: 11, 6: 12, 7: 13, 8: 14, 9: 15, 10: 16}
-    # 0-5  |  [NoRecord, TrackCrash, NormalClear, HardClear, UltimateChain, PerfectUltimateChain]
-    #         [NO, CR, NC, HC, UC, PUC]
-    # 6-16 |  [NO, D, C, B, A, A+, AA, AA+, AAA, AAA+, S]
-    # 17   |  [sum]
+    level_summary = np.zeros((21, 19), dtype=int)  # Get default level summary
+    clear_index = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6} # No Record,Track Crash, NC, HC ,UC, PUC, MC
+    grade_index = {0: 7, 1: 8, 2: 9, 3: 10, 4: 11, 5: 12, 6: 13, 7: 14, 8: 15, 9: 16, 10: 17}
+    # 0-6  |  [NoRecord, TrackCrash, NormalClear, HardClear, UltimateChain, PerfectUltimateChainM ExHC]
+    #         [NO, CR, NC, HC, UC, PUC, ExMC]
+    # 7-17 |  [NO, D, C, B, A, A+, AA, AA+, AAA, AAA+, S]
+    # 18   |  [sum]
     for single_music in npdb.level_table:  # Calculating the sum of each level
         if not single_music[0]:
             continue
-        nov, adv, exh, inf, mxm = \
+        nov, adv, exh, inf, mxm, ult = \
             int(single_music[10]), int(single_music[13]), int(single_music[16]), \
-            int(single_music[19]), int(single_music[22])
-        level_summary[nov][17] += 1
-        level_summary[adv][17] += 1
-        level_summary[exh][17] += 1
-        level_summary[inf][17] += 1
-        level_summary[mxm][17] += 1
+            int(single_music[19]), int(single_music[22]), int(single_music[25])
+        level_summary[nov][18] += 1
+        level_summary[adv][18] += 1
+        level_summary[exh][18] += 1
+        level_summary[inf][18] += 1
+        level_summary[mxm][18] += 1
+        level_summary[ult][18] += 1
 
     # Due to the "Automation Paradise", there are 2 ghost song in music_db.xml which should be eliminated.
-    level_summary[7][17] -= 2
-    level_summary[13][17] -= 2
-    level_summary[16][17] -= 2
-    level_summary[18][17] -= 2
+    # level_summary[7][17] -= 2
+    # level_summary[13][17] -= 2
+    # level_summary[16][17] -= 2
+    # level_summary[18][17] -= 2
 
     # Generate data frame for histogram, violin plot
-    hist_list = [[[], [], [], [], [], []] for _ in range(21)]  # [[A+], [AA], [AA+], [AAA], [AAA+], [S]]
+    hist_list = [[[], [], [], [], [], [], []] for _ in range(21)]  # [[A],[A+], [AA], [AA+], [AAA], [AAA+], [S]]
     violin_list = []  # Each line should be [score: int, lv: str]
     for record in _music_map:
         valid, mid, m_type, score, clear, grade, m_time, exs, lv, vf = record[:10]
@@ -905,16 +923,16 @@ def plot_summary(base_lv: int, _music_map: list = asp.music_map, profile: list =
         if lv >= base_lv and score > 8000000:
             violin_list.append([score, str(lv)])
     for index in range(21):
-        level_summary[index][0] = level_summary[index][6] = level_summary[index][17] - sum(level_summary[index][1:6])
+        level_summary[index][0] = level_summary[index][7] = level_summary[index][18] - sum(level_summary[index][1:7])
     violin_df = pd.DataFrame(violin_list, columns=['score', 'lv'])
 
     # Generate pure text message to return
     msg = ['| Level Summary from lv.%d\n'
-           '| Level    NC      HC      UC      PUC     | AAA     AAA+    S       | SUM' % base_lv]
+           '| Level    NC      HC      MC      UC      PUC     | AA+     AAA     AAA+    S       | SUM' % base_lv]
     for index in range(base_lv, 21):
-        nc, hc, uc, puc = level_summary[index][2:6]
-        aaa, aaa_plus, s, _sum = level_summary[index][14:]
-        msg.append('\n| lv.%-6d%-8d%-8d%-8d%-8d| %-8d%-8d%-8d| %-8d' % (index, nc, hc, uc, puc, aaa, aaa_plus, s, _sum))
+        nr, tc ,nc, hc, uc, puc, mc = level_summary[index][:7]
+        aa_plus, aaa, aaa_plus, s, _sum = level_summary[index][14:]
+        msg.append('\n| lv.%-6d%-8d%-8d%-8d%-8d%-8d| %-8d%-8d%-8d%-8d| %-8d' % (index, nc, hc, mc, uc, puc, aa_plus, aaa, aaa_plus, s, _sum))
     msg = ''.join(msg)
     timber.debug('Generate summary data complete.\n%s' % msg)
 
@@ -933,6 +951,7 @@ def plot_summary(base_lv: int, _music_map: list = asp.music_map, profile: list =
         """
         Generate background, text layer and load image ingredients
         """
+        return msg
         # raise RuntimeError("问题太多,不想处理了就这样吧((")
         # Stipulate the size of the background & generate
         px_prologue, px_chapters, px_epilogue = 450, 1625, 1950

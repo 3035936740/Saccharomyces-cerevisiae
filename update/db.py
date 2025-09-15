@@ -31,7 +31,7 @@ def update_db(game_dir, map_size):
     tree = parse(utf_path)
     root = tree.getroot()
 
-    music_map = [[''] * 26 for _ in range(map_size)]
+    music_map = [[''] * 29 for _ in range(map_size)]
 
     for music in root.findall('music'):
         # 举例获取属性或子标签内容
@@ -107,6 +107,17 @@ def update_db(game_dir, map_size):
             mxm_lv = 0
             mxm_ill = 'dummy'
             mxm_eff = 'dummy'
+        try:
+            ultimate = difficulty.find('ultimate')
+            if ultimate is None:
+                raise ValueError("ultimate not found")
+            ult_lv = int(ultimate.findtext("difnum"))
+            ult_ill = amend_jis(ultimate.findtext("illustrator"))
+            ult_eff = amend_jis(ultimate.findtext("effected_by"))
+        except Exception:
+            ult_lv = 0
+            ult_ill = 'dummy'
+            ult_eff = 'dummy'
         
         music_map[int(mid)] = [
                 mid, name, name_yo, artist, artist_yo,
@@ -116,6 +127,7 @@ def update_db(game_dir, map_size):
                 exh_lv, exh_ill, exh_eff,
                 inf_lv, inf_ill, inf_eff,
                 mxm_lv, mxm_ill, mxm_eff,
+                ult_lv,ult_ill,ult_eff,
                 music_ascii
             ]
         
